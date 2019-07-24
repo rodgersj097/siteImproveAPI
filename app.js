@@ -11,8 +11,7 @@ db.once('open', () => {
       console.log('Connection to mongodb')
       var issues = require('./api.js')
     })
-
-
+var api = require('./api')
 
 
 const port = 3000

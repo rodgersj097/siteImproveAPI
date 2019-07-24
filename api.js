@@ -3,44 +3,40 @@ var request = require("request"),
   pass = "2dc60ea7badce2c48de72e40de2dc773";
 var rp = require("request-promise");
 const Issue = require("./models/issue");
-const options = {
-  url: `https://api.siteimprove.com/v2/sites/1348684361/content/crawl`,
+
+const options = function(page){
+ var url = `https://api.siteimprove.com/v2/sites/1348684361/seov2/issues?page=${page}&page_size=20` 
+  return { 
+  url: url,
   auth: {
     user: username,
     pass: pass
   },
   json: true
+} 
 };
 
-const createCsvWriter = require('csv-writer').createObjectCsvWriter
-const csvWriter = createCsvWriter({
-    path: 'C:/Users/rodgersja/Desktop/SiteImprove API/IssueTracker.csv',
-    header: [
-        {id: 'issue', title: 'issue'},
-        {id: 'category', title: 'category'},
-        {id: 'gained', title: 'gained'},
-        {id: 'toGain', title: 'toGain'},
-       
-     ]
-});
 
-function getIssues() {
-  request.get(
-    {
-      url: `https://api.siteimprove.com/v2/sites/1348684361/seov2/issues?page=1&page_size=20`,
-      auth: {
-        user: username,
-        pass: pass
-      },
-      json: true
-    },
-    (err, res, body) => {
+
+function getIssues(page, incomingIssues) {
+  request.get(options(page),(err, res, body) => {
       if (err) {
         console.err(err);
       }
+      var currentIssues = body.items; 
+      incomingIssues.push(currentIssues)
+      var totalPages = body.total_pages 
+      console.log(page)
+      
+      if(page === totalPages){
+      console.log(`Going to save page ${page}`);
+      
+      save(incomingIssues);
+      return 
+      } 
+      page++
+      getIssues(page, incomingIssues)
 
-      console.log(body.items);
-      save(body.items);
     }
   );
 }
@@ -58,7 +54,7 @@ async function save(result) {
         .slice(0, 10)
         .replace(/-/g, "/")
     });
-
+    console.log(issue)
     issue
       .save()
       .then(() => {
@@ -69,46 +65,6 @@ async function save(result) {
       });
   }
 }
-async function getChange() {
-  var dates = await getCrawlDates();
-  var lastWeekFormatted = new Date(dates[0]);
-  lastWeekFormatted.setHours(00);
-  lastWeekFormatted.setSeconds(00);
-  lastWeekFormatted.toISOString();
-
-  var thisWeekFormatted = new Date(dates[1]);
-  thisWeekFormatted.setHours(00);
-  thisWeekFormatted.setSeconds(00);
-  thisWeekFormatted.toISOString();
-
-  var lastWeekIssues = [];
-  var thisWeekIssues = [];
-
-  Issue.find({ date: { $gte: lastWeekFormatted } })
-    .then(issues => {
-      lastWeekIssues.push(issues);
-      console.log(lastWeekIssues);
-    })
-    .catch(err => console.log(err));
-
-  Issue.find()
-    .then(issues => {
-        thisWeekIssues.push(issues)
-        console.log(thisWeekIssues)
-        
-            csvWriter.writeRecords(issues)
-            .then(()=> { 
-                console.log('Records have been written to csv')
-            })
-    })
-    .catch(err => console.log(err));
-
-
-       
-}
-
-
-
 
 async function getCrawlDates() {
   let data = [];
@@ -132,12 +88,4 @@ async function getCrawlDates() {
     });
   return data;
 }
-
-function menu() {
-  console.log("pulling issues from API andsaving in database");
-  //getIssues();
-  console.log("Getting difference between crawl");
-  getChange();
-}
-
-module.exports = menu();
+module.exports = getIssues(1, []) 
