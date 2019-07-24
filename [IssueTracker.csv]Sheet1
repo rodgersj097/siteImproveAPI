@@ -1,0 +1,11 @@
+issue,category,gained,toGain
+mobile_speed,mobile,0.9,9.1
+compression_used,technical,0,3.6
+ssl_mixed,technical,1.56,2.94
+desktop_speed,technical,1.76,1.84
+pages_with_frames,technical,0.15,1.54
+sitemap_excluded_pages,technical,0,1.35
+redirect_301,technical,0.08,0.93
+broken_links_entry_pages,content,0,1
+redirect_chain,technical,0,1.01
+structured_markup_pages,technical,0.03,0.65

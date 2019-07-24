@@ -12,10 +12,22 @@ const options = {
   json: true
 };
 
+const createCsvWriter = require('csv-writer').createObjectCsvWriter
+const csvWriter = createCsvWriter({
+    path: 'C:/Users/rodgersja/Desktop/SiteImprove API/IssueTracker.csv',
+    header: [
+        {id: 'issue', title: 'issue'},
+        {id: 'category', title: 'category'},
+        {id: 'gained', title: 'gained'},
+        {id: 'toGain', title: 'toGain'},
+       
+     ]
+});
+
 function getIssues() {
   request.get(
     {
-      url: `https://api.siteimprove.com/v2/sites/1348684361/seov2/issues?page=1&page_size=10`,
+      url: `https://api.siteimprove.com/v2/sites/1348684361/seov2/issues?page=1&page_size=20`,
       auth: {
         user: username,
         pass: pass
@@ -34,13 +46,14 @@ function getIssues() {
 }
 
 async function save(result) {
+    var dates = await getCrawlDates() 
   for (var ele of result) {
     var issue = new Issue({
       issue: ele.issue_name,
       category: ele.issue_type,
       gained: ele.seo_points_gained,
       toGain: ele.seo_points_to_gain,
-      date: new Date()
+      date: new Date(dates[0])
         .toJSON()
         .slice(0, 10)
         .replace(/-/g, "/")
@@ -78,12 +91,24 @@ async function getChange() {
     })
     .catch(err => console.log(err));
 
-  Issue.find({ date: { $gte: thisWeekFormatted } })
-    .then(issues => thisWeekIssues.push(issues))
+  Issue.find()
+    .then(issues => {
+        thisWeekIssues.push(issues)
+        console.log(thisWeekIssues)
+        
+            csvWriter.writeRecords(issues)
+            .then(()=> { 
+                console.log('Records have been written to csv')
+            })
+    })
     .catch(err => console.log(err));
 
-  //console.log(lastWeekIssues, thisWeekIssues);
+
+       
 }
+
+
+
 
 async function getCrawlDates() {
   let data = [];
